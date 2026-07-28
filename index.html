@@ -158,7 +158,6 @@
                 <div class="stat-subtext" id="total-dist">-- km</div>
             </div>
 
-            <!-- Nouvelle carte pour le conducteur -->
             <div class="stat-card full">
                 <div class="stat-label">Au volant (Théorie)</div>
                 <div class="stat-value highlight" id="current-driver">En attente GPS...</div>
@@ -169,7 +168,7 @@
         <div class="alert-box">
             <div class="alert-title" id="alert-title">⚠️ CONSIGNES DU TRAJET</div>
             <div class="alert-text" id="alert-text">
-                Routage routier réel activé. Pensez à activer les alertes vocales avec le bouton vert.
+                Routage strict par les aires d'autoroute. Pensez à activer les alertes vocales.
             </div>
         </div>
 
@@ -180,21 +179,21 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Ajout de la propriété "driver" pour indiquer qui conduit POUR ALLER JUSQU'À cette étape.
+    // Étapes positionnées précisément sur les aires d'autoroute (sans quitter l'axe)
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
                 { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
-                { id: 2, name: "Pause (Vironvay / Mantes)", lat: 49.197, lon: 1.217, driver: "Ton épouse" },
+                { id: 2, name: "Aire de Vironvay (A13)", lat: 49.200, lon: 1.220, driver: "Ton épouse" },
                 { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 4, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700, driver: "Laurent" },
-                { id: 5, name: "Pause Détente (Beaune)", lat: 47.026, lon: 4.833, driver: "Ton épouse" },
+                { id: 4, name: "Aire de Nemours (A6)", lat: 48.270, lon: 2.700, driver: "Laurent" },
+                { id: 5, name: "Aire de Beaune-Tailly (A6)", lat: 47.000, lon: 4.860, driver: "Ton épouse" },
                 { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 48.270, lon: 2.700, distAlert: 4, msg: "Approche de Nemours. Aire de repos à proximité pour la pause.", title: "☕ PAUSE TRAJET" },
+                { lat: 48.270, lon: 2.700, distAlert: 4, msg: "Approche de l'aire de Nemours. Préparez la pause sur l'autoroute.", title: "☕ PAUSE AIRE DE NEMOURS" },
                 { lat: 47.900, lon: 3.500, distAlert: 3, msg: "Attention, zone de contrôle de vitesse automatique sur l'A6.", title: "📸 ZONE RADAR FIXE" }
             ]
         },
@@ -202,10 +201,10 @@
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
                 { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Pause (Beaune)", lat: 47.026, lon: 4.833, driver: "Laurent" },
-                { id: 3, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700, driver: "Ton épouse" },
+                { id: 2, name: "Aire de Beaune-Tailly (A6)", lat: 47.000, lon: 4.860, driver: "Laurent" },
+                { id: 3, name: "Aire de Nemours (A6)", lat: 48.270, lon: 2.700, driver: "Ton épouse" },
                 { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 5, name: "Pause Détente (Vironvay)", lat: 49.197, lon: 1.217, driver: "Laurent" },
+                { id: 5, name: "Aire de Vironvay (A13)", lat: 49.200, lon: 1.220, driver: "Laurent" },
                 { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
@@ -341,7 +340,6 @@
                 document.getElementById('total-dist').innerText = `${Math.round(distTotal)} km restant(s)`;
                 document.getElementById('total-timer').innerText = formatTime(distTotal);
 
-                // Affichage du conducteur pour le tronçon actuel
                 if (nextStep.driver) {
                     document.getElementById('current-driver').innerText = `🚗 ${nextStep.driver}`;
                 }
