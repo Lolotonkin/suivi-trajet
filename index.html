@@ -182,7 +182,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Coordonnées exactes calées sur les captures Google Maps (A6 et A13)
+    // Coordonnées exactes intégrant les relevés précis fournis
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
@@ -191,20 +191,20 @@
                 { id: 2, name: "A13, Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Ton épouse" },
                 { id: 3, name: "Contournement A86 / Versailles", lat: 48.785, lon: 2.030, driver: "Laurent" },
                 { id: 4, name: "Aire de Darvault (Nemours, A6)", lat: 48.258, lon: 2.691, driver: "Laurent" },
-                { id: 5, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 47.009, lon: 4.892, driver: "Ton épouse" },
+                { id: 5, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 46.96238, lon: 4.83823, driver: "Ton épouse" },
                 { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
                 { lat: 48.258, lon: 2.691, distAlert: 4, msg: "Approche de l'aire de Darvault à Nemours.", title: "☕ PAUSE AIRE DE DARVAULT" },
-                { lat: 47.009, lon: 4.892, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         },
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
                 { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 47.009, lon: 4.892, driver: "Laurent" },
+                { id: 2, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 46.96238, lon: 4.83823, driver: "Laurent" },
                 { id: 3, name: "Aire de Darvault (Nemours, A6)", lat: 48.258, lon: 2.691, driver: "Ton épouse" },
                 { id: 4, name: "Contournement A86 / Versailles", lat: 48.785, lon: 2.030, driver: "Laurent" },
                 { id: 5, name: "A13, Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Laurent" },
@@ -212,7 +212,7 @@
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 47.009, lon: 4.892, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         }
     };
@@ -274,8 +274,6 @@
             L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur : ${e.driver}`);
         });
 
-        // Utilisation prioritaire d'une polyline directe ultra-fiable reliant les points autoroutiers exacts
-        // pour s'affranchir des limitations du serveur distant de routage.
         const points = routeData.etapes.map(e => [e.lat, e.lon]);
         L.polyline(points, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(map);
     }
