@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Copilote V5 - Via Le Chesnay</title>
+    <title>Copilote V7 - Repas Après Paris</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -163,7 +163,7 @@
         </div>
 
         <div class="sim-container">
-            <div class="sim-title">🧪 Simulation Routière (Calcul en direct)</div>
+            <div class="sim-title">🧪 Simulation Routière</div>
             <div class="sim-buttons" id="sim-buttons-container"></div>
         </div>
 
@@ -185,9 +185,9 @@
             </div>
 
             <div class="stat-card full">
-                <div class="stat-label">Au volant (Théorie)</div>
+                <div class="stat-label">Au volant de ce segment</div>
                 <div class="stat-value highlight" id="current-driver">En attente...</div>
-                <div class="stat-subtext">Mise à jour par suivi de route</div>
+                <div class="stat-subtext">Mise à jour automatique par suivi GPS</div>
             </div>
         </div>
 
@@ -203,38 +203,38 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // --- LES DONNÉES EXACTES MISES À JOUR (Avec traversée Le Chesnay) ---
     const routes = {
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
-                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Lou" },
-                { id: 2, name: "Aire de Beaune Merceuil", lat: 46.96238, lon: 4.83823, driver: "Lou" },
-                { id: 3, name: "Aire de Darvault", lat: 48.2636, lon: 2.7242, driver: "Puce" },
-                { id: 4, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Lou" },
-                { id: 5, name: "Aire de Vironvay Nord", lat: 49.21131, lon: 1.22012, driver: "Lou" },
-                { id: 6, name: "Arrivée (Litteau)", lat: 49.155, lon: -0.898, driver: "Puce" }
+                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: null },
+                { id: 2, name: "Aire de Beaune Merceuil", lat: 46.96238, lon: 4.83823, driver: "Laurent" }, 
+                { id: 3, name: "Aire de Darvault", lat: 48.2636, lon: 2.7242, driver: "Puce" }, 
+                { id: 4, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Laurent" }, 
+                { id: 5, name: "Aire de Vironvay Nord 🍔 (Pause Midi)", lat: 49.21131, lon: 1.22012, driver: "Laurent" }, 
+                { id: 6, name: "Arrivée (Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" } 
             ],
             vigilances: [
                 { lat: 48.825, lon: 2.125, distAlert: 5, msg: "Attention ! Traversée par Le Chesnay pour esquiver le Duplex A86 (coffre de toit).", title: "🚫 CONTOURNEMENT DUPLEX A86" },
-                { lat: 48.2636, lon: 2.7242, distAlert: 4, msg: "Approche de l'aire de Darvault.", title: "☕ PAUSE AIRE DE DARVAULT" },
-                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune Merceuil sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 49.21131, lon: 1.22012, distAlert: 4, msg: "Approche de l'aire de Vironvay Nord. C'est l'heure de la pause midi après Paris !", title: "🍔 PAUSE MIDI" },
+                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune Merceuil. Puce prend le volant.", title: "🔄 RELAIS CONDUCTEUR" }
             ]
         },
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
-                { id: 1, name: "Départ (Litteau)", lat: 49.155, lon: -0.898, driver: "Lou" },
-                { id: 2, name: "Aire de Vironvay Sud", lat: 49.2121, lon: 1.21765, driver: "Puce" },
-                { id: 3, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Lou" },
-                { id: 4, name: "Aire de Nemours", lat: 48.2617, lon: 2.7221, driver: "Lou" },
-                { id: 5, name: "Aire de Beaune Tailly", lat: 46.96891, lon: 4.83630, driver: "Puce" },
-                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Lou" }
+                { id: 1, name: "Départ (Litteau)", lat: 49.155, lon: -0.898, driver: null },
+                { id: 2, name: "Aire de Vironvay Sud 🍔 (Pause Midi)", lat: 49.2121, lon: 1.21765, driver: "Laurent" }, 
+                { id: 3, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Laurent" }, 
+                { id: 4, name: "Aire de Nemours", lat: 48.2617, lon: 2.7221, driver: "Laurent" }, 
+                { id: 5, name: "Aire de Beaune Tailly", lat: 46.96891, lon: 4.83630, driver: "Puce" }, 
+                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" } 
             ],
             vigilances: [
                 { lat: 48.825, lon: 2.125, distAlert: 5, msg: "Attention ! Traversée par Le Chesnay pour esquiver le Duplex A86 (coffre de toit).", title: "🚫 CONTOURNEMENT DUPLEX A86" },
-                { lat: 48.2617, lon: 2.7221, distAlert: 4, msg: "Approche de l'aire de Nemours.", title: "☕ PAUSE AIRE DE NEMOURS" },
-                { lat: 46.96891, lon: 4.83630, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 48.2617, lon: 2.7221, distAlert: 4, msg: "Approche de l'aire de Nemours. Relais de conduite, Puce prend le volant.", title: "🔄 RELAIS CONDUCTEUR" },
+                { lat: 46.96891, lon: 4.83630, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly. Dernier relais, Laurent reprend le volant.", title: "🔄 RELAIS CONDUCTEUR" },
+                { lat: 49.2121, lon: 1.21765, distAlert: 4, msg: "Approche de l'aire de Vironvay Sud. C'est l'heure de la pause midi, avant de traverser Paris !", title: "🍔 PAUSE MIDI" }
             ]
         }
     };
@@ -243,7 +243,6 @@
     let soundEnabled = false;
     let currentWaypointIndex = 1; 
     
-    // --- VARIABLES DE CARTE ---
     const map = L.map('map').setView([47.5, 2.5], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
         attribution: '© OpenStreetMap' 
@@ -252,7 +251,6 @@
     let routeLayerGroup = L.layerGroup().addTo(map);
     let userMarker = null;
 
-    // --- GESTION AUDIO ---
     function toggleSound() {
         soundEnabled = !soundEnabled;
         const btn = document.getElementById('btn-sound');
@@ -277,7 +275,6 @@
         }
     }
 
-    // --- UTILITAIRES ---
     function formatTime(seconds) {
         const hoursTotal = seconds / 3600;
         const h = Math.floor(hoursTotal);
@@ -295,7 +292,6 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // --- INITIALISATION DU TRAJET ---
     function setDirection(dir) {
         currentDirection = dir;
         currentWaypointIndex = 1; 
@@ -303,7 +299,6 @@
         document.getElementById('btn-aller').classList.toggle('active', dir === 'aller');
         
         buildSimButtons();
-        // Simule la position au départ
         triggerPositionUpdate(routes[currentDirection].etapes[0].lat, routes[currentDirection].etapes[0].lon, "Départ", 0);
     }
 
@@ -313,17 +308,16 @@
         routes[currentDirection].etapes.forEach((e, index) => {
             const btn = document.createElement('button');
             btn.className = 'btn-sim';
-            btn.innerText = `📍 ${e.name}`;
+            let shortName = e.name.replace("Aire de ", "").replace(" (Pause Midi)", "").replace("Traversée ", "");
+            btn.innerText = `📍 ${shortName}`;
             btn.onclick = () => triggerPositionUpdate(e.lat, e.lon, e.name, index);
             container.appendChild(btn);
         });
     }
 
-    // --- MOTEUR DE ROUTAGE REEL (OSRM) ---
     async function triggerPositionUpdate(uLat, uLon, locationName, forcedIndex = -1) {
         document.getElementById('status-bar').innerText = `Mise à jour depuis: ${locationName}...`;
 
-        // Mise à jour du marqueur GPS
         if (!userMarker) {
             userMarker = L.circleMarker([uLat, uLon], {
                 radius: 10, fillColor: '#22c55e', color: '#ffffff', weight: 3, opacity: 1, fillOpacity: 1
@@ -336,18 +330,15 @@
 
         const etapes = routes[currentDirection].etapes;
 
-        // Gestion de l'index de progression
         if (forcedIndex !== -1) {
             currentWaypointIndex = forcedIndex + 1;
         } else if (currentWaypointIndex < etapes.length) {
-            // Si on approche à moins de 3km de l'étape visée, on passe à la suivante
             const distToNext = calcDistance(uLat, uLon, etapes[currentWaypointIndex].lat, etapes[currentWaypointIndex].lon);
             if (distToNext < 3) {
                 currentWaypointIndex++;
             }
         }
 
-        // Cas d'arrivée
         if (currentWaypointIndex >= etapes.length) {
             document.getElementById('etape-name').innerText = "Arrivée !";
             document.getElementById('etape-timer').innerText = "0 min";
@@ -358,7 +349,6 @@
             return;
         }
 
-        // --- CONSTRUCTUION DE LA REQUETE OSRM ---
         let coordsString = `${uLon},${uLat}`;
         for (let i = currentWaypointIndex; i < etapes.length; i++) {
             coordsString += `;${etapes[i].lon},${etapes[i].lat}`;
@@ -373,17 +363,17 @@
             if (data.code === 'Ok' && data.routes.length > 0) {
                 const route = data.routes[0];
                 
-                // Dessin sur la carte du tracé EXACT sur les routes
                 routeLayerGroup.clearLayers();
                 const latLngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
                 L.polyline(latLngs, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(routeLayerGroup);
 
-                // Remettre les pins des étapes
                 etapes.forEach(e => {
-                    L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur : ${e.driver}`);
+                    if (e.id > 1) {
+                        let desc = e.driver ? `<br>Conduit par : <b>${e.driver}</b>` : "";
+                        L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b>${desc}`);
+                    }
                 });
 
-                // Extraction des vraies valeurs
                 const totalKm = Math.round(route.distance / 1000);
                 const totalDuration = route.duration;
                 const nextStep = etapes[currentWaypointIndex];
@@ -405,7 +395,6 @@
             document.getElementById('status-bar').innerText = `Erreur réseau routier.`;
         }
 
-        // --- VIGILANCES (Alertes vocales) ---
         routes[currentDirection].vigilances.forEach((v) => {
             const d = calcDistance(uLat, uLon, v.lat, v.lon);
             if (d <= v.distAlert) {
@@ -416,10 +405,8 @@
         });
     }
 
-    // Lancement au démarrage
     setDirection('retour');
 
-    // Mises à jour automatiques du GPS réel
     let lastGpsLat = null;
     let lastGpsLon = null;
     if ("geolocation" in navigator) {
