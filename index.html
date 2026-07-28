@@ -161,14 +161,14 @@
             <div class="stat-card full">
                 <div class="stat-label">Au volant (Théorie)</div>
                 <div class="stat-value highlight" id="current-driver">En attente GPS...</div>
-                <div class="stat-subtext">Le conducteur s'actualise à chaque étape franchie</div>
+                <div class="stat-subtext">Le conducteur s'actualise à chaque étape franchية</div>
             </div>
         </div>
 
         <div class="alert-box">
             <div class="alert-title" id="alert-title">⚠️ CONSIGNES DU TRAJET</div>
             <div class="alert-text" id="alert-text">
-                Routage strict par les aires d'autoroute. Pensez à activer les alertes vocales.
+                Routage strict par les aires d'autoroute sans sortie de l'axe.
             </div>
         </div>
 
@@ -179,37 +179,37 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Étapes positionnées précisément sur les aires d'autoroute (sans quitter l'axe)
+    // Étapes calées directement sur l'axe autoroutier (A6 / A13) sans sortie
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
                 { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
-                { id: 2, name: "Aire de Vironvay (A13)", lat: 49.200, lon: 1.220, driver: "Ton épouse" },
+                { id: 2, name: "Aire de Vironvay (A13)", lat: 49.230, lon: 1.250, driver: "Ton épouse" },
                 { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 4, name: "Aire de Nemours (A6)", lat: 48.270, lon: 2.700, driver: "Laurent" },
-                { id: 5, name: "Aire de Beaune-Tailly (A6)", lat: 47.000, lon: 4.860, driver: "Ton épouse" },
+                { id: 4, name: "Aire de Nemours (A6)", lat: 48.260, lon: 2.690, driver: "Laurent" },
+                { id: 5, name: "Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, driver: "Ton épouse" },
                 { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 48.270, lon: 2.700, distAlert: 4, msg: "Approche de l'aire de Nemours. Préparez la pause sur l'autoroute.", title: "☕ PAUSE AIRE DE NEMOURS" },
-                { lat: 47.900, lon: 3.500, distAlert: 3, msg: "Attention, zone de contrôle de vitesse automatique sur l'A6.", title: "📸 ZONE RADAR FIXE" }
+                { lat: 48.260, lon: 2.690, distAlert: 4, msg: "Approche de l'aire de Nemours sur l'autoroute.", title: "☕ PAUSE AIRE DE NEMOURS" },
+                { lat: 47.020, lon: 4.865, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         },
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
                 { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Aire de Beaune-Tailly (A6)", lat: 47.000, lon: 4.860, driver: "Laurent" },
-                { id: 3, name: "Aire de Nemours (A6)", lat: 48.270, lon: 2.700, driver: "Ton épouse" },
+                { id: 2, name: "Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, driver: "Laurent" },
+                { id: 3, name: "Aire de Nemours (A6)", lat: 48.260, lon: 2.690, driver: "Ton épouse" },
                 { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 5, name: "Aire de Vironvay (A13)", lat: 49.200, lon: 1.220, driver: "Laurent" },
+                { id: 5, name: "Aire de Vironvay (A13)", lat: 49.230, lon: 1.250, driver: "Laurent" },
                 { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 46.800, lon: 4.800, distAlert: 3, msg: "Attention, radar automatique signalé sur ce tronçon de l'A6.", title: "📸 ZONE RADAR FIXE" }
+                { lat: 47.020, lon: 4.865, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         }
     };
@@ -333,12 +333,15 @@
 
                 let nextStep = routeData.etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 3) || destFinale;
                 const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
-                const distTotal = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
+                
+                // Estimation routière réaliste (application d'un coefficient routier de ~1.25 par rapport à la vol d'oiseau)
+                const distTotalStraight = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
+                const distTotalRoad = distTotalStraight * 1.25;
 
                 document.getElementById('etape-name').innerText = `Vers ${nextStep.name}`;
                 document.getElementById('etape-timer').innerText = formatTime(distNext);
-                document.getElementById('total-dist').innerText = `${Math.round(distTotal)} km restant(s)`;
-                document.getElementById('total-timer').innerText = formatTime(distTotal);
+                document.getElementById('total-dist').innerText = `${Math.round(distTotalRoad)} km restant(s)`;
+                document.getElementById('total-timer').innerText = formatTime(distTotalRoad);
 
                 if (nextStep.driver) {
                     document.getElementById('current-driver').innerText = `🚗 ${nextStep.driver}`;
