@@ -2,12 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <!-- Forcer le navigateur à toujours charger la dernière version -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Copilote V4 - Trajet Réel</title>
+    <title>Copilote V5 - Via Le Chesnay</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -204,7 +203,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // --- LES DONNÉES EXACTES MISES À JOUR ---
+    // --- LES DONNÉES EXACTES MISES À JOUR (Avec traversée Le Chesnay) ---
     const routes = {
         aller: {
             name: "Aller : Lyon ➔ Normandie",
@@ -212,12 +211,12 @@
                 { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
                 { id: 2, name: "Aire de Beaune Merceuil", lat: 46.96238, lon: 4.83823, driver: "Laurent" },
                 { id: 3, name: "Aire de Darvault", lat: 48.2636, lon: 2.7242, driver: "Ton épouse" },
-                { id: 4, name: "Versailles / A86", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 4, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Laurent" },
                 { id: 5, name: "Aire de Vironvay Nord", lat: 49.21131, lon: 1.22012, driver: "Laurent" },
                 { id: 6, name: "Arrivée (Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
-                { lat: 48.785, lon: 2.030, distAlert: 5, msg: "Attention ! Quitter l'autoroute avant le Duplex A86. Ne pas prendre le tunnel (coffre de toit).", title: "🚫 BIFURCATION DUPLEX A86" },
+                { lat: 48.825, lon: 2.125, distAlert: 5, msg: "Attention ! Traversée par Le Chesnay pour esquiver le Duplex A86 (coffre de toit).", title: "🚫 CONTOURNEMENT DUPLEX A86" },
                 { lat: 48.2636, lon: 2.7242, distAlert: 4, msg: "Approche de l'aire de Darvault.", title: "☕ PAUSE AIRE DE DARVAULT" },
                 { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune Merceuil sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
@@ -227,13 +226,13 @@
             etapes: [
                 { id: 1, name: "Départ (Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
                 { id: 2, name: "Aire de Vironvay Sud", lat: 49.2121, lon: 1.21765, driver: "Ton épouse" },
-                { id: 3, name: "Versailles / A86", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 3, name: "Traversée Le Chesnay", lat: 48.825, lon: 2.125, driver: "Laurent" },
                 { id: 4, name: "Aire de Nemours", lat: 48.2617, lon: 2.7221, driver: "Laurent" },
                 { id: 5, name: "Aire de Beaune Tailly", lat: 46.96891, lon: 4.83630, driver: "Ton épouse" },
                 { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
-                { lat: 48.785, lon: 2.030, distAlert: 5, msg: "Attention ! Éviter absolument le tunnel Duplex A86 (coffre de toit).", title: "🚫 BIFURCATION DUPLEX A86" },
+                { lat: 48.825, lon: 2.125, distAlert: 5, msg: "Attention ! Traversée par Le Chesnay pour esquiver le Duplex A86 (coffre de toit).", title: "🚫 CONTOURNEMENT DUPLEX A86" },
                 { lat: 48.2617, lon: 2.7221, distAlert: 4, msg: "Approche de l'aire de Nemours.", title: "☕ PAUSE AIRE DE NEMOURS" },
                 { lat: 46.96891, lon: 4.83630, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
@@ -242,7 +241,7 @@
 
     let currentDirection = 'retour';
     let soundEnabled = false;
-    let currentWaypointIndex = 1; // Index de la prochaine étape visée
+    let currentWaypointIndex = 1; 
     
     // --- VARIABLES DE CARTE ---
     const map = L.map('map').setView([47.5, 2.5], 6);
@@ -329,7 +328,7 @@
             userMarker = L.circleMarker([uLat, uLon], {
                 radius: 10, fillColor: '#22c55e', color: '#ffffff', weight: 3, opacity: 1, fillOpacity: 1
             }).addTo(map);
-            map.setView([uLat, uLon], 8);
+            map.setView([uLat, uLon], 10);
         } else {
             userMarker.setLatLng([uLat, uLon]);
             map.panTo([uLat, uLon]);
@@ -360,7 +359,6 @@
         }
 
         // --- CONSTRUCTUION DE LA REQUETE OSRM ---
-        // On construit le chemin réel : Position Actuelle -> Etape Cible -> Etape Suivante ... -> Arrivée
         let coordsString = `${uLon},${uLat}`;
         for (let i = currentWaypointIndex; i < etapes.length; i++) {
             coordsString += `;${etapes[i].lon},${etapes[i].lat}`;
@@ -385,12 +383,11 @@
                     L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur : ${e.driver}`);
                 });
 
-                // Extraction des vraies valeurs (via route, pas ligne droite)
+                // Extraction des vraies valeurs
                 const totalKm = Math.round(route.distance / 1000);
                 const totalDuration = route.duration;
                 const nextStep = etapes[currentWaypointIndex];
                 
-                // Le "leg 0" correspond au segment : Position Actuelle -> Prochaine Étape
                 const legToNext = route.legs[0];
 
                 document.getElementById('etape-name').innerText = `Vers ${nextStep.name}`;
@@ -431,7 +428,6 @@
                 const uLat = pos.coords.latitude;
                 const uLon = pos.coords.longitude;
                 
-                // On limite les appels API OSRM en ne recalculant que si on s'est déplacé d'au moins 1 km
                 let movedEnough = true;
                 if (lastGpsLat !== null && lastGpsLon !== null) {
                     const distSinceLast = calcDistance(uLat, uLon, lastGpsLat, lastGpsLon);
