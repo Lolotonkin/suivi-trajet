@@ -95,8 +95,14 @@
             text-align: center;
             border: 1px solid #475569;
         }
+        .stat-card.full {
+            grid-column: span 2;
+            background: #0f172a;
+            border-color: #0284c7;
+        }
         .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
         .stat-value { font-size: 1.2rem; font-weight: 700; color: #38bdf8; margin-top: 2px; }
+        .stat-value.highlight { color: #fef08a; }
         .stat-subtext { font-size: 0.7rem; color: #cbd5e1; margin-top: 2px; }
 
         .alert-box {
@@ -151,6 +157,13 @@
                 <div class="stat-value" id="total-timer">-- h --</div>
                 <div class="stat-subtext" id="total-dist">-- km</div>
             </div>
+
+            <!-- Nouvelle carte pour le conducteur -->
+            <div class="stat-card full">
+                <div class="stat-label">Au volant (Théorie)</div>
+                <div class="stat-value highlight" id="current-driver">En attente GPS...</div>
+                <div class="stat-subtext">Le conducteur s'actualise à chaque étape franchie</div>
+            </div>
         </div>
 
         <div class="alert-box">
@@ -167,17 +180,17 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Configuration des trajets (étapes et alertes)
+    // Ajout de la propriété "driver" pour indiquer qui conduit POUR ALLER JUSQU'À cette étape.
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
-                { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898 },
-                { id: 2, name: "Pause (Vironvay / Mantes)", lat: 49.197, lon: 1.217 },
-                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030 },
-                { id: 4, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700 },
-                { id: 5, name: "Pause Détente (Beaune)", lat: 47.026, lon: 4.833 },
-                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881 }
+                { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
+                { id: 2, name: "Pause (Vironvay / Mantes)", lat: 49.197, lon: 1.217, driver: "Ton épouse" },
+                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 4, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700, driver: "Laurent" },
+                { id: 5, name: "Pause Détente (Beaune)", lat: 47.026, lon: 4.833, driver: "Ton épouse" },
+                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
@@ -188,12 +201,12 @@
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
-                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881 },
-                { id: 2, name: "Pause (Beaune)", lat: 47.026, lon: 4.833 },
-                { id: 3, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700 },
-                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030 },
-                { id: 5, name: "Pause Détente (Vironvay)", lat: 49.197, lon: 1.217 },
-                { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898 }
+                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
+                { id: 2, name: "Pause (Beaune)", lat: 47.026, lon: 4.833, driver: "Laurent" },
+                { id: 3, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700, driver: "Ton épouse" },
+                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 5, name: "Pause Détente (Vironvay)", lat: 49.197, lon: 1.217, driver: "Laurent" },
+                { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
@@ -206,7 +219,6 @@
     let soundEnabled = false;
     let triggeredAlerts = new Set();
 
-    // Initialisation de la carte
     const map = L.map('map').setView([47.5, 2.5], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
         attribution: '© OpenStreetMap' 
@@ -215,7 +227,6 @@
     let routeLayerGroup = L.layerGroup().addTo(map);
     let userMarker = null;
 
-    // Gestion du Son et de la Synthèse Vocale
     function toggleSound() {
         soundEnabled = !soundEnabled;
         const btn = document.getElementById('btn-sound');
@@ -240,7 +251,6 @@
         }
     }
 
-    // Gestion de l'affichage de l'itinéraire
     function setDirection(dir) {
         currentDirection = dir;
         triggeredAlerts.clear();
@@ -254,17 +264,14 @@
         speak(`Trajet ${msgDirection} sélectionné.`);
     }
 
-    // Calcul du tracé routier via l'API OSRM
     async function renderMapRoute() {
         routeLayerGroup.clearLayers();
         const routeData = routes[currentDirection];
 
-        // Placement des marqueurs pour les étapes
         routeData.etapes.forEach((e) => {
-            L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b>`);
+            L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur prévu : ${e.driver}`);
         });
 
-        // Requête à l'API OSRM pour le tracé exact sur les routes
         const coordString = routeData.etapes.map(e => `${e.lon},${e.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
 
@@ -272,14 +279,12 @@
             const response = await fetch(url);
             const data = await response.json();
             if (data.code === 'Ok') {
-                // Conversion des coordonnées GeoJSON (Lon, Lat) vers Leaflet (Lat, Lon)
                 const roadCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                 L.polyline(roadCoords, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(routeLayerGroup);
             } else {
                 fallbackPolyline(routeData.etapes);
             }
         } catch (err) {
-            // En cas d'erreur de réseau, on trace des lignes directes
             fallbackPolyline(routeData.etapes);
         }
     }
@@ -289,12 +294,10 @@
         L.polyline(points, { color: '#38bdf8', weight: 4, opacity: 0.8, dashArray: '6, 6' }).addTo(routeLayerGroup);
     }
 
-    // Chargement initial du tracé
     renderMapRoute();
 
-    // Fonctions utilitaires de calcul
     function calcDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Rayon de la terre en km
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -310,7 +313,6 @@
         return h === 0 ? `${m} min` : `${h}h ${m < 10 ? '0' : ''}${m}`;
     }
 
-    // Suivi GPS en temps réel
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(
             (pos) => {
@@ -318,7 +320,6 @@
                 const uLon = pos.coords.longitude;
                 document.getElementById('status-bar').innerText = `GPS Connecté (Précision: ${Math.round(pos.coords.accuracy)}m)`;
 
-                // Mise à jour de la position de la voiture
                 if (!userMarker) {
                     userMarker = L.circleMarker([uLat, uLon], {
                         radius: 9, fillColor: '#22c55e', color: '#ffffff', weight: 3, opacity: 1, fillOpacity: 1
@@ -331,7 +332,6 @@
                 const routeData = routes[currentDirection];
                 const destFinale = routeData.etapes[routeData.etapes.length - 1];
 
-                // Calcul vers la prochaine étape
                 let nextStep = routeData.etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 3) || destFinale;
                 const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
                 const distTotal = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
@@ -341,10 +341,13 @@
                 document.getElementById('total-dist').innerText = `${Math.round(distTotal)} km restant(s)`;
                 document.getElementById('total-timer').innerText = formatTime(distTotal);
 
-                // Détection des zones de vigilance / Radars
+                // Affichage du conducteur pour le tronçon actuel
+                if (nextStep.driver) {
+                    document.getElementById('current-driver').innerText = `🚗 ${nextStep.driver}`;
+                }
+
                 routeData.vigilances.forEach((v, idx) => {
                     const d = calcDistance(uLat, uLon, v.lat, v.lon);
-                    // Si on entre dans la zone d'alerte (en kilomètres)
                     if (d <= v.distAlert && !triggeredAlerts.has(`${currentDirection}_${idx}`)) {
                         triggeredAlerts.add(`${currentDirection}_${idx}`);
                         
