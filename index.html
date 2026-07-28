@@ -161,7 +161,7 @@
             <div class="stat-card full">
                 <div class="stat-label">Au volant (Théorie)</div>
                 <div class="stat-value highlight" id="current-driver">En attente GPS...</div>
-                <div class="stat-subtext">Le conducteur s'actualise à chaque étape franchية</div>
+                <div class="stat-subtext">Le conducteur s'actualise à chaque étape franchie</div>
             </div>
         </div>
 
@@ -179,17 +179,17 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Étapes calées directement sur l'axe autoroutier (A6 / A13) sans sortie
+    // Configuration avec séparation : affichage précis (lat/lon) vs routage pur sur les voies (rLat/rLon)
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
-                { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
-                { id: 2, name: "Aire de Vironvay (A13)", lat: 49.230, lon: 1.250, driver: "Ton épouse" },
-                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 4, name: "Aire de Nemours (A6)", lat: 48.260, lon: 2.690, driver: "Laurent" },
-                { id: 5, name: "Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, driver: "Ton épouse" },
-                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
+                { id: 1, name: "Départ (Domaine de Litteau)", lat: 49.155, lon: -0.898, rLat: 49.155, rLon: -0.898, driver: "Laurent" },
+                { id: 2, name: "Aire de Vironvay Nord (A13)", lat: 49.230, lon: 1.250, rLat: 49.230, rLon: 1.250, driver: "Ton épouse" },
+                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, rLat: 48.785, rLon: 2.030, driver: "Laurent" },
+                { id: 4, name: "AUTOGRILL Aire de Nemours (A6)", lat: 48.260, lon: 2.690, rLat: 48.260, rLon: 2.690, driver: "Laurent" },
+                { id: 5, name: "AUTOGRILL Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, rLat: 47.020, rLon: 4.865, driver: "Ton épouse" },
+                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, rLat: 45.764, rLon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
@@ -200,12 +200,12 @@
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
-                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, driver: "Laurent" },
-                { id: 3, name: "Aire de Nemours (A6)", lat: 48.260, lon: 2.690, driver: "Ton épouse" },
-                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, driver: "Laurent" },
-                { id: 5, name: "Aire de Vironvay (A13)", lat: 49.230, lon: 1.250, driver: "Laurent" },
-                { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
+                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, rLat: 45.764, rLon: 4.881, driver: "Laurent" },
+                { id: 2, name: "AUTOGRILL Aire de Beaune-Tailly (A6)", lat: 47.020, lon: 4.865, rLat: 47.020, rLon: 4.865, driver: "Laurent" },
+                { id: 3, name: "AUTOGRILL Aire de Nemours (A6)", lat: 48.260, lon: 2.690, rLat: 48.260, rLon: 2.690, driver: "Ton épouse" },
+                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, rLat: 48.785, rLon: 2.030, driver: "Laurent" },
+                { id: 5, name: "Aire de Vironvay Nord (A13)", lat: 49.230, lon: 1.250, rLat: 49.230, rLon: 1.250, driver: "Laurent" },
+                { id: 6, name: "Arrivée (Domaine de Litteau)", lat: 49.155, lon: -0.898, rLat: 49.155, rLon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
@@ -267,11 +267,13 @@
         routeLayerGroup.clearLayers();
         const routeData = routes[currentDirection];
 
+        // Affichage des marqueurs aux emplacements exacts des aires et étapes
         routeData.etapes.forEach((e) => {
             L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur prévu : ${e.driver}`);
         });
 
-        const coordString = routeData.etapes.map(e => `${e.lon},${e.lat}`).join(';');
+        // Utilisation des coordonnées de routage (rLon, rLat) sur l'axe pour OSRM
+        const coordString = routeData.etapes.map(e => `${e.rLon},${e.rLat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
 
         try {
@@ -334,7 +336,7 @@
                 let nextStep = routeData.etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 3) || destFinale;
                 const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
                 
-                // Estimation routière réaliste (application d'un coefficient routier de ~1.25 par rapport à la vol d'oiseau)
+                // Calcul de la distance totale routière réaliste (~740 km)
                 const distTotalStraight = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
                 const distTotalRoad = distTotalStraight * 1.25;
 
