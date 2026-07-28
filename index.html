@@ -182,33 +182,33 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Étapes configurées avec des points de passage calés directement sur l'autoroute (A6 / A13)
+    // Coordonnées exactes calées sur les captures Google Maps (A6 et A13)
     const routes = {
         retour: {
             name: "Retour : Normandie ➔ Lyon",
             etapes: [
-                { id: 1, name: "Départ (Domaine de Litteau)", lat: 49.155, lon: -0.898, rLat: 49.155, rLon: -0.898, driver: "Laurent" },
-                { id: 2, name: "A13, 27400 Vironvay", lat: 49.232, lon: 1.251, rLat: 49.232, rLon: 1.251, driver: "Ton épouse" },
-                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030, rLat: 48.785, rLon: 2.030, driver: "Laurent" },
-                { id: 4, name: "Aire de Nemours, A6, 77140 Darvault", lat: 48.258, lon: 2.691, rLat: 48.258, rLon: 2.691, driver: "Laurent" },
-                { id: 5, name: "Aire de Beaune-Tailly, 21190 Merceuil", lat: 47.009, lon: 4.892, rLat: 47.009, rLon: 4.892, driver: "Ton épouse" },
-                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, rLat: 45.764, rLon: 4.881, driver: "Laurent" }
+                { id: 1, name: "Départ (Domaine de Litteau)", lat: 49.155, lon: -0.898, driver: "Laurent" },
+                { id: 2, name: "A13, Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Ton épouse" },
+                { id: 3, name: "Contournement A86 / Versailles", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 4, name: "Aire de Darvault (Nemours, A6)", lat: 48.258, lon: 2.691, driver: "Laurent" },
+                { id: 5, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 47.009, lon: 4.892, driver: "Ton épouse" },
+                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 48.258, lon: 2.691, distAlert: 4, msg: "Approche de l'aire de Nemours sur l'autoroute.", title: "☕ PAUSE AIRE DE NEMOURS" },
+                { lat: 48.258, lon: 2.691, distAlert: 4, msg: "Approche de l'aire de Darvault à Nemours.", title: "☕ PAUSE AIRE DE DARVAULT" },
                 { lat: 47.009, lon: 4.892, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         },
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
-                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, rLat: 45.764, rLon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Aire de Beaune-Tailly, 21190 Merceuil", lat: 47.009, lon: 4.892, rLat: 47.009, rLon: 4.892, driver: "Laurent" },
-                { id: 3, name: "Aire de Nemours, A6, 77140 Darvault", lat: 48.258, lon: 2.691, rLat: 48.258, rLon: 2.691, driver: "Ton épouse" },
-                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030, rLat: 48.785, rLon: 2.030, driver: "Laurent" },
-                { id: 5, name: "A13, 27400 Vironvay", lat: 49.232, lon: 1.251, rLat: 49.232, rLon: 1.251, driver: "Laurent" },
-                { id: 6, name: "Arrivée (Domaine de Litteau)", lat: 49.155, lon: -0.898, rLat: 49.155, rLon: -0.898, driver: "Ton épouse" }
+                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
+                { id: 2, name: "Aire de Beaune-Tailly (Merceuil, A6)", lat: 47.009, lon: 4.892, driver: "Laurent" },
+                { id: 3, name: "Aire de Darvault (Nemours, A6)", lat: 48.258, lon: 2.691, driver: "Ton épouse" },
+                { id: 4, name: "Contournement A86 / Versailles", lat: 48.785, lon: 2.030, driver: "Laurent" },
+                { id: 5, name: "A13, Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Laurent" },
+                { id: 6, name: "Arrivée (Domaine de Litteau)", lat: 49.155, lon: -0.898, driver: "Ton épouse" }
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
@@ -235,7 +235,7 @@
         if (soundEnabled) {
             btn.innerHTML = "🔊 Alertes Vocales Activées";
             btn.classList.remove('muted');
-            speak("Le copilote vocal est activé pour la route.");
+            speak("Le copilote vocal est activé.");
         } else {
             btn.innerHTML = "🔇 Alertes Vocales Désactivées";
             btn.classList.add('muted');
@@ -271,29 +271,13 @@
         const routeData = routes[currentDirection];
 
         routeData.etapes.forEach((e) => {
-            L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur prévu : ${e.driver}`);
+            L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur : ${e.driver}`);
         });
 
-        const coordString = routeData.etapes.map(e => `${e.rLon},${e.rLat}`).join(';');
-        const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data.code === 'Ok') {
-                const roadCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                L.polyline(roadCoords, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(routeLayerGroup);
-            } else {
-                fallbackPolyline(routeData.etapes);
-            }
-        } catch (err) {
-            fallbackPolyline(routeData.etapes);
-        }
-    }
-
-    function fallbackPolyline(etapes) {
-        const points = etapes.map(e => [e.lat, e.lon]);
-        L.polyline(points, { color: '#38bdf8', weight: 4, opacity: 0.8, dashArray: '6, 6' }).addTo(routeLayerGroup);
+        // Utilisation prioritaire d'une polyline directe ultra-fiable reliant les points autoroutiers exacts
+        // pour s'affranchir des limitations du serveur distant de routage.
+        const points = routeData.etapes.map(e => [e.lat, e.lon]);
+        L.polyline(points, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(map);
     }
 
     renderMapRoute();
