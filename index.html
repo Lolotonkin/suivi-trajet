@@ -164,9 +164,7 @@
 
         <div class="sim-container">
             <div class="sim-title">🧪 Mode Simulation Rapide (si GPS bloqué)</div>
-            <div class="sim-buttons" id="sim-buttons-container">
-                <!-- Généré dynamiquement -->
-            </div>
+            <div class="sim-buttons" id="sim-buttons-container"></div>
         </div>
 
         <button class="btn-audio" id="btn-sound" onclick="toggleSound()">
@@ -213,20 +211,20 @@
                 { id: 2, name: "Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Ton épouse" },
                 { id: 3, name: "Versailles / A86", lat: 48.785, lon: 2.030, driver: "Laurent" },
                 { id: 4, name: "Aire de Darvault", lat: 48.258, lon: 2.691, driver: "Laurent" },
-                { id: 5, name: "Aire de Beaune-Tailly", lat: 46.96238, lon: 4.83823, driver: "Ton épouse" },
+                { id: 5, name: "Aire de Beaune-Tailly", lat: 46.96891, lon: 4.83630, driver: "Ton épouse" },
                 { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" }
             ],
             vigilances: [
                 { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
                 { lat: 48.258, lon: 2.691, distAlert: 4, msg: "Approche de l'aire de Darvault à Nemours.", title: "☕ PAUSE AIRE DE DARVAULT" },
-                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 46.96891, lon: 4.83630, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         },
         aller: {
             name: "Aller : Lyon ➔ Normandie",
             etapes: [
                 { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881, driver: "Laurent" },
-                { id: 2, name: "Aire de Beaune-Tailly", lat: 46.96238, lon: 4.83823, driver: "Laurent" },
+                { id: 2, name: "Aire de Beaune-Tailly", lat: 46.96891, lon: 4.83630, driver: "Laurent" },
                 { id: 3, name: "Aire de Darvault", lat: 48.258, lon: 2.691, driver: "Ton épouse" },
                 { id: 4, name: "Versailles / A86", lat: 48.785, lon: 2.030, driver: "Laurent" },
                 { id: 5, name: "Aire de Vironvay", lat: 49.2111, lon: 1.2176, driver: "Laurent" },
@@ -234,7 +232,7 @@
             ],
             vigilances: [
                 { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86.", title: "🚫 BIFURCATION DUPLEX A86" },
-                { lat: 46.96238, lon: 4.83823, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
+                { lat: 46.96891, lon: 4.83630, distAlert: 4, msg: "Approche de l'aire de Beaune-Tailly sur l'A6.", title: "☕ PAUSE AIRE DE BEAUNE" }
             ]
         }
     };
@@ -271,7 +269,7 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'fr-FR';
             utterance.rate = 1.0;
-            window.speechSynthesis.speechSynthesis?.speak(utterance) || window.speechSynthesis.speak(utterance);
+            window.speechSynthesis.speak(utterance);
         }
     }
 
@@ -282,14 +280,13 @@
         document.getElementById('btn-aller').classList.toggle('active', dir === 'aller');
         renderMapRoute();
         buildSimButtons();
-        // Simuler le départ par défaut
         simulatePosition(routes[currentDirection].etapes[0].lat, routes[currentDirection].etapes[0].lon, "Départ initial");
     }
 
     function buildSimButtons() {
         const container = document.getElementById('sim-buttons-container');
         container.innerHTML = '';
-        routes[currentDirection].etapes.forEach((e, index) => {
+        routes[currentDirection].etapes.forEach((e) => {
             const btn = document.createElement('button');
             btn.className = 'btn-sim';
             btn.innerText = `📍 ${e.name}`;
@@ -298,14 +295,51 @@
         });
     }
 
+    function formatSecondsToTime(seconds) {
+        const hoursTotal = seconds / 3600;
+        const h = Math.floor(hoursTotal);
+        const m = Math.round((hoursTotal - h) * 60);
+        return h === 0 ? `${m} min` : `${h}h ${m < 10 ? '0' : ''}${m}`;
+    }
+
     function renderMapRoute() {
         routeLayerGroup.clearLayers();
         const routeData = routes[currentDirection];
+
+        // Poser les marqueurs des étapes
         routeData.etapes.forEach((e) => {
             L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b><br>Conducteur : ${e.driver}`);
         });
+
+        // Requête au service de routage OSRM pour suivre les routes automatiquement
+        const coordsString = routeData.etapes.map(e => `${e.lon},${e.lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    // OSRM retourne [lon, lat], Leaflet a besoin de [lat, lon]
+                    const latLngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                    L.polyline(latLngs, { color: '#38bdf8', weight: 5, opacity: 0.9 }).titlesub;
+
+                    // Mise à jour de la distance et durée globale réelle basée sur la route
+                    const totalKm = Math.round(route.distance / 1000);
+                    document.getElementById('total-dist').innerText = `${totalKm} km`;
+                    document.getElementById('total-timer').innerText = formatSecondsToTime(route.duration);
+                } else {
+                    fallbackStraightLine(routeData);
+                }
+            })
+            .catch(err => {
+                fallbackStraightLine(routeData);
+            });
+    }
+
+    function fallbackStraightLine(routeData) {
         const points = routeData.etapes.map(e => [e.lat, e.lon]);
-        L.polyline(points, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(map);
+        L.polyline(points, { color: '#38bdf8', weight: 5, opacity: 0.9, dashArray: '5, 10' }).addTo(routeLayerGroup);
     }
 
     function calcDistance(lat1, lon1, lat2, lon2) {
@@ -318,15 +352,8 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function formatTime(distanceKm, speedKmH = 95) {
-        const hoursTotal = distanceKm / speedKmH;
-        const h = Math.floor(hoursTotal);
-        const m = Math.round((hoursTotal - h) * 60);
-        return h === 0 ? `${m} min` : `${h}h ${m < 10 ? '0' : ''}${m}`;
-    }
-
     function simulatePosition(uLat, uLon, locationName) {
-        document.getElementById('status-bar').innerText = `Mode Simulation actif : ${locationName}`;
+        document.getElementById('status-bar').innerText = `Position : ${locationName}`;
 
         if (!userMarker) {
             userMarker = L.circleMarker([uLat, uLon], {
@@ -343,19 +370,15 @@
 
         let nextStep = routeData.etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 3) || destFinale;
         const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
-        const distTotalStraight = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
-        const distTotalRoad = distTotalStraight * 1.25;
 
         document.getElementById('etape-name').innerText = `Vers ${nextStep.name}`;
-        document.getElementById('etape-timer').innerText = formatTime(distNext);
-        document.getElementById('total-dist').innerText = `${Math.round(distTotalRoad)} km restant(s)`;
-        document.getElementById('total-timer').innerText = formatTime(distTotalRoad);
+        document.getElementById('etape-timer').innerText = formatSecondsToTime(distNext * 36 / 10); // Estimation simple temps restant étape
 
         if (nextStep.driver) {
             document.getElementById('current-driver').innerText = `🚗 ${nextStep.driver}`;
         }
 
-        routeData.vigilances.forEach((v, idx) => {
+        routeData.vigilances.forEach((v) => {
             const d = calcDistance(uLat, uLon, v.lat, v.lon);
             if (d <= v.distAlert) {
                 document.getElementById('alert-title').innerText = v.title;
@@ -365,18 +388,14 @@
         });
     }
 
-    // Initialisation
     setDirection('retour');
 
-    // Tenter d'activer le vrai GPS en arrière-plan si le protocole le permet
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(
             (pos) => {
                 simulatePosition(pos.coords.latitude, pos.coords.longitude, "GPS Actif");
             },
-            (err) => {
-                // Ignore l'erreur silencieusement puisque le mode simulation est présent
-            },
+            (err) => {},
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
         );
     }
