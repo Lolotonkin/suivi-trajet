@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suivi Trajet Litteau ➔ Villeurbanne</title>
+    <title>Copilote Trajet Normandie ⇄ Lyon</title>
     
-    <!-- CSS Leaflet (Carte) & Google Fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -23,14 +22,12 @@
             flex-direction: column;
             height: 100vh;
         }
-        /* Zone Carte */
         #map {
             flex: 1;
             width: 100%;
-            min-height: 45vh;
+            min-height: 40vh;
             z-index: 1;
         }
-        /* Zone Dashboard */
         #dashboard {
             background-color: #1e293b;
             padding: 16px;
@@ -38,21 +35,53 @@
             border-top-right-radius: 20px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
             z-index: 2;
-            max-height: 55vh;
+            max-height: 60vh;
             overflow-y: auto;
         }
-        .header-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-align: center;
-            color: #38bdf8;
+        
+        .route-selector {
+            display: flex;
+            gap: 8px;
             margin-bottom: 12px;
+        }
+        .btn-route {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: #94a3b8;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .btn-route.active {
+            background: #0284c7;
+            color: white;
+            border-color: #38bdf8;
+        }
+
+        .btn-audio {
+            width: 100%;
+            padding: 10px;
+            background: #16a34a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-        /* Grille des chronomètres */
+        .btn-audio.muted {
+            background: #dc2626;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -61,41 +90,34 @@
         }
         .stat-card {
             background: #334155;
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             text-align: center;
             border: 1px solid #475569;
         }
-        .stat-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
-        .stat-value { font-size: 1.3rem; font-weight: 700; color: #38bdf8; margin-top: 4px; }
+        .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+        .stat-value { font-size: 1.2rem; font-weight: 700; color: #38bdf8; margin-top: 2px; }
         .stat-subtext { font-size: 0.7rem; color: #cbd5e1; margin-top: 2px; }
 
-        /* Points de Vigilance */
         .alert-box {
             background-color: #451a03;
             border: 1px solid #b45309;
             border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
+            padding: 10px;
         }
         .alert-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #fbbf24;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
-        .alert-list {
-            margin: 0; padding-left: 18px;
-            font-size: 0.8rem;
-            color: #fef3c7;
-        }
-        .alert-list li { margin-bottom: 4px; }
-        
-        #status-bar {
+        .alert-text {
             font-size: 0.75rem;
+            color: #fef3c7;
+            line-height: 1.3;
+        }
+        #status-bar {
+            font-size: 0.7rem;
             text-align: center;
             color: #64748b;
             margin-top: 8px;
@@ -108,16 +130,20 @@
     <div id="map"></div>
 
     <div id="dashboard">
-        <div class="header-title">
-            🚗 Trajet Retour : Normandie ➔ Lyon
+        <div class="route-selector">
+            <button class="btn-route active" id="btn-retour" onclick="setDirection('retour')">🔄 RETOUR (15 Août)</button>
+            <button class="btn-route" id="btn-aller" onclick="setDirection('aller')">🚗 ALLER (1er Août)</button>
         </div>
 
-        <!-- Temps & Distance -->
+        <button class="btn-audio" id="btn-sound" onclick="toggleSound()">
+            🔊 Activer les Alertes Vocales
+        </button>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Prochaine Étape</div>
                 <div class="stat-value" id="etape-timer">-- h --</div>
-                <div class="stat-subtext" id="etape-name">Recherche GPS...</div>
+                <div class="stat-subtext" id="etape-name">GPS en attente...</div>
             </div>
 
             <div class="stat-card">
@@ -127,114 +153,213 @@
             </div>
         </div>
 
-        <!-- Points de Vigilance -->
         <div class="alert-box">
-            <div class="alert-title">
-                ⚠️ POINTS DE VIGILANCE & CONSIGNES
+            <div class="alert-title" id="alert-title">⚠️ CONSIGNES DU TRAJET</div>
+            <div class="alert-text" id="alert-text">
+                Routage routier réel activé. Pensez à activer les alertes vocales avec le bouton vert.
             </div>
-            <ul class="alert-list">
-                <li><b>Coffre de toit (> 2.00m) :</b> Interdiction Duplex A86. Contourner via A12 / N12 / N104.</li>
-                <li><b>Pause Midi (~12h00) :</b> Uniquement McDonald's ou Burger King (Pas de KFC).</li>
-                <li><b>Relais Pilote :</b> Alex prend la conduite sur le tronçon A6 fluide (Nemours ➔ Beaune).</li>
-            </ul>
         </div>
 
-        <div id="status-bar">GPS : En attente d'autorisation...</div>
+        <div id="status-bar">GPS : Recherche de signal...</div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // 1. Définition des Étapes du trajet
-    const etapes = [
-        { id: 1, name: "Départ (Litteau)", lat: 49.155, lon: -0.898 },
-        { id: 2, name: "Pause Midi (Vironvay / Mantes)", lat: 49.197, lon: 1.217 },
-        { id: 3, name: "Relais Alex (Nemours)", lat: 48.270, lon: 2.700 },
-        { id: 4, name: "Pause Café (Beaune)", lat: 47.026, lon: 4.833 },
-        { id: 5, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881 }
-    ];
+    // Configuration des trajets (étapes et alertes)
+    const routes = {
+        retour: {
+            name: "Retour : Normandie ➔ Lyon",
+            etapes: [
+                { id: 1, name: "Départ (Camping Litteau)", lat: 49.155, lon: -0.898 },
+                { id: 2, name: "Pause (Vironvay / Mantes)", lat: 49.197, lon: 1.217 },
+                { id: 3, name: "Contournement A86 (Versailles / N12)", lat: 48.785, lon: 2.030 },
+                { id: 4, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700 },
+                { id: 5, name: "Pause Détente (Beaune)", lat: 47.026, lon: 4.833 },
+                { id: 6, name: "Arrivée (Villeurbanne)", lat: 45.764, lon: 4.881 }
+            ],
+            vigilances: [
+                { lat: 48.801, lon: 2.130, distAlert: 5, msg: "Attention ! Approche de Versailles. Ne pas prendre le tunnel Duplex A86 en raison du coffre de toit. Suivre A12 puis N12.", title: "🚫 BIFURCATION DUPLEX A86" },
+                { lat: 48.270, lon: 2.700, distAlert: 4, msg: "Approche de Nemours. Aire de repos à proximité pour la pause.", title: "☕ PAUSE TRAJET" },
+                { lat: 47.900, lon: 3.500, distAlert: 3, msg: "Attention, zone de contrôle de vitesse automatique sur l'A6.", title: "📸 ZONE RADAR FIXE" }
+            ]
+        },
+        aller: {
+            name: "Aller : Lyon ➔ Normandie",
+            etapes: [
+                { id: 1, name: "Départ (Villeurbanne)", lat: 45.764, lon: 4.881 },
+                { id: 2, name: "Pause (Beaune)", lat: 47.026, lon: 4.833 },
+                { id: 3, name: "Pause Déjeuner (Nemours)", lat: 48.270, lon: 2.700 },
+                { id: 4, name: "Contournement A86 (N12 / Versailles)", lat: 48.785, lon: 2.030 },
+                { id: 5, name: "Pause Détente (Vironvay)", lat: 49.197, lon: 1.217 },
+                { id: 6, name: "Arrivée (Camping Litteau)", lat: 49.155, lon: -0.898 }
+            ],
+            vigilances: [
+                { lat: 48.500, lon: 2.500, distAlert: 5, msg: "Attention ! Contournement de Paris. Quitter l'A10 vers N12 / A12. Éviter absolument le Duplex A86 avec le chargement de toit.", title: "🚫 BIFURCATION DUPLEX A86" },
+                { lat: 46.800, lon: 4.800, distAlert: 3, msg: "Attention, radar automatique signalé sur ce tronçon de l'A6.", title: "📸 ZONE RADAR FIXE" }
+            ]
+        }
+    };
 
-    const destinationFinale = etapes[etapes.length - 1];
+    let currentDirection = 'retour';
+    let soundEnabled = false;
+    let triggeredAlerts = new Set();
 
-    // 2. Initialisation Carte
+    // Initialisation de la carte
     const map = L.map('map').setView([47.5, 2.5], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        attribution: '© OpenStreetMap' 
     }).addTo(map);
 
-    // Marqueurs d'étapes
-    etapes.forEach((e, idx) => {
-        L.marker([e.lat, e.lon]).addTo(map)
-            .bindPopup(`<b>Étape ${idx + 1} : ${e.name}</b>`);
-    });
+    let routeLayerGroup = L.layerGroup().addTo(map);
+    let userMarker = null;
 
-    // Tracer la ligne du trajet
-    const polylinePoints = etapes.map(e => [e.lat, e.lon]);
-    L.polyline(polylinePoints, { color: '#38bdf8', weight: 4, opacity: 0.7, dashArray: '8, 8' }).addTo(map);
+    // Gestion du Son et de la Synthèse Vocale
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('btn-sound');
+        if (soundEnabled) {
+            btn.innerHTML = "🔊 Alertes Vocales Activées";
+            btn.classList.remove('muted');
+            speak("Le copilote vocal est activé pour la route.");
+        } else {
+            btn.innerHTML = "🔇 Alertes Vocales Désactivées";
+            btn.classList.add('muted');
+        }
+    }
 
-    // 3. Calculs de distance & temps (Formule d'Haversine)
+    function speak(text) {
+        if (!soundEnabled) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // Gestion de l'affichage de l'itinéraire
+    function setDirection(dir) {
+        currentDirection = dir;
+        triggeredAlerts.clear();
+
+        document.getElementById('btn-retour').classList.toggle('active', dir === 'retour');
+        document.getElementById('btn-aller').classList.toggle('active', dir === 'aller');
+
+        renderMapRoute();
+        
+        let msgDirection = dir === 'retour' ? 'vers Lyon' : 'vers la Normandie';
+        speak(`Trajet ${msgDirection} sélectionné.`);
+    }
+
+    // Calcul du tracé routier via l'API OSRM
+    async function renderMapRoute() {
+        routeLayerGroup.clearLayers();
+        const routeData = routes[currentDirection];
+
+        // Placement des marqueurs pour les étapes
+        routeData.etapes.forEach((e) => {
+            L.marker([e.lat, e.lon]).addTo(routeLayerGroup).bindPopup(`<b>${e.name}</b>`);
+        });
+
+        // Requête à l'API OSRM pour le tracé exact sur les routes
+        const coordString = routeData.etapes.map(e => `${e.lon},${e.lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.code === 'Ok') {
+                // Conversion des coordonnées GeoJSON (Lon, Lat) vers Leaflet (Lat, Lon)
+                const roadCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                L.polyline(roadCoords, { color: '#38bdf8', weight: 5, opacity: 0.9 }).addTo(routeLayerGroup);
+            } else {
+                fallbackPolyline(routeData.etapes);
+            }
+        } catch (err) {
+            // En cas d'erreur de réseau, on trace des lignes directes
+            fallbackPolyline(routeData.etapes);
+        }
+    }
+
+    function fallbackPolyline(etapes) {
+        const points = etapes.map(e => [e.lat, e.lon]);
+        L.polyline(points, { color: '#38bdf8', weight: 4, opacity: 0.8, dashArray: '6, 6' }).addTo(routeLayerGroup);
+    }
+
+    // Chargement initial du tracé
+    renderMapRoute();
+
+    // Fonctions utilitaires de calcul
     function calcDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Rayon Terre en km
+        const R = 6371; // Rayon de la terre en km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                   Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; // Distance en km
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     function formatTime(distanceKm, speedKmH = 95) {
         const hoursTotal = distanceKm / speedKmH;
         const h = Math.floor(hoursTotal);
         const m = Math.round((hoursTotal - h) * 60);
-        if (h === 0) return `${m} min`;
-        return `${h}h ${m < 10 ? '0' : ''}${m}`;
+        return h === 0 ? `${m} min` : `${h}h ${m < 10 ? '0' : ''}${m}`;
     }
 
-    // 4. Géolocalisation GPS
-    let userMarker = null;
-
+    // Suivi GPS en temps réel
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(
             (pos) => {
                 const uLat = pos.coords.latitude;
                 const uLon = pos.coords.longitude;
-
                 document.getElementById('status-bar').innerText = `GPS Connecté (Précision: ${Math.round(pos.coords.accuracy)}m)`;
 
-                // Mise à jour du marqueur Voiture
+                // Mise à jour de la position de la voiture
                 if (!userMarker) {
                     userMarker = L.circleMarker([uLat, uLon], {
                         radius: 9, fillColor: '#22c55e', color: '#ffffff', weight: 3, opacity: 1, fillOpacity: 1
-                    }).addTo(map).bindPopup("<b>Votre voiture</b>");
+                    }).addTo(map);
                     map.setView([uLat, uLon], 8);
                 } else {
                     userMarker.setLatLng([uLat, uLon]);
                 }
 
-                // Trouver la prochaine étape
-                let nextStep = etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 5) || destinationFinale;
-                
-                // Calculs
-                const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
-                const distTotal = calcDistance(uLat, uLon, destinationFinale.lat, destinationFinale.lon);
+                const routeData = routes[currentDirection];
+                const destFinale = routeData.etapes[routeData.etapes.length - 1];
 
-                // Affichage dans le Dashboard
+                // Calcul vers la prochaine étape
+                let nextStep = routeData.etapes.find(e => calcDistance(uLat, uLon, e.lat, e.lon) > 3) || destFinale;
+                const distNext = calcDistance(uLat, uLon, nextStep.lat, nextStep.lon);
+                const distTotal = calcDistance(uLat, uLon, destFinale.lat, destFinale.lon);
+
                 document.getElementById('etape-name').innerText = `Vers ${nextStep.name}`;
                 document.getElementById('etape-timer').innerText = formatTime(distNext);
-
                 document.getElementById('total-dist').innerText = `${Math.round(distTotal)} km restant(s)`;
                 document.getElementById('total-timer').innerText = formatTime(distTotal);
+
+                // Détection des zones de vigilance / Radars
+                routeData.vigilances.forEach((v, idx) => {
+                    const d = calcDistance(uLat, uLon, v.lat, v.lon);
+                    // Si on entre dans la zone d'alerte (en kilomètres)
+                    if (d <= v.distAlert && !triggeredAlerts.has(`${currentDirection}_${idx}`)) {
+                        triggeredAlerts.add(`${currentDirection}_${idx}`);
+                        
+                        document.getElementById('alert-title').innerText = v.title;
+                        document.getElementById('alert-text').innerText = v.msg;
+                        
+                        speak(`${v.title}. ${v.msg}`);
+                    }
+                });
             },
             (err) => {
-                document.getElementById('status-bar').innerText = "⚠️ Activer le GPS sur votre téléphone pour voir les temps restants.";
+                document.getElementById('status-bar').innerText = "⚠️ Activez la géolocalisation sur votre smartphone.";
             },
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
         );
-    } else {
-        document.getElementById('status-bar').innerText = "❌ GPS non supporté par ce navigateur.";
     }
 </script>
 
