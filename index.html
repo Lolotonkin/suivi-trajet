@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Copilote V15 - Phélypeaux Google Maps Précis</title>
+    <title>Copilote V16 - Phélypeaux Tonkin Corrigé</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -203,9 +203,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Coordonnées exactes basées sur le repère Google Maps pour 1 Rue Phélypeaux
-    const PHELYPEAUX_LAT = 45.77305; 
-    const PHELYPEAUX_LON = 4.88235;
+    // Coordonnées exactes et corrigées du 1 Rue Phélypeaux (Tonkin / CPE Louis Armand)
+    const PHELYPEAUX_LAT = 45.77235; 
+    const PHELYPEAUX_LON = 4.88290;
     const LITTEAU_LAT = 49.15774;
     const LITTEAU_LON = -0.92245;
 
@@ -332,7 +332,7 @@
             userMarker = L.circleMarker([uLat, uLon], {
                 radius: 10, fillColor: '#22c55e', color: '#ffffff', weight: 3, opacity: 1, fillOpacity: 1
             }).addTo(map);
-            map.setView([uLat, uLon], 10);
+            map.setView([uLat, uLon], 15);
         } else {
             userMarker.setLatLng([uLat, uLon]);
             map.panTo([uLat, uLon]);
